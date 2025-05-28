@@ -15,36 +15,37 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            background-color: #1a1a2e; /* ダークブルーの背景 */
-            color: #e0e0e0; /* 明るいテキスト色 */
-            overflow: hidden; /* スクロールバーを隠す */
+            background-color: #1a1a2e; 
+            color: #e0e0e0; 
+            overflow: hidden; 
         }
         #gameCanvas {
-            background-color: #0f0f1a; /* さらに暗いキャンバス背景 */
-            border: 2px solid #4a4a8a; /* 紫がかった境界線 */
+            background-color: #0f0f1a; 
+            border: 2px solid #4a4a8a; 
             border-radius: 8px;
             box-shadow: 0 0 20px rgba(74, 74, 138, 0.5);
-            display: block; /* 中央揃えのため */
-            margin: auto; /* 中央揃えのため */
-            cursor: none; /* マウスカーソルを隠す（ゲームプレイ中は自機がカーソル代わり） */
+            display: block; 
+            margin: auto; 
+            cursor: none; 
         }
         .game-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 10px 20px; /* 上下のパディングを少し減らす */
-            background-color: #2a2a4e; /* 少し明るいコンテナ背景 */
+            padding: 10px 20px; 
+            background-color: #2a2a4e; 
             border-radius: 12px;
             box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            position: relative; /* オーバーレイの基準点 */
         }
         .controls-info {
-            margin-top: 10px; /* マージンを少し減らす */
-            font-size: 0.85em; /* 文字を少し小さく */
+            margin-top: 10px; 
+            font-size: 0.85em; 
             text-align: center;
-            color: #c0c0ff; /* やや明るい青紫のテキスト */
+            color: #c0c0ff; 
         }
         button {
-            background-color: #4a00e0; /* 紫 */
+            background-color: #4a00e0; 
             color: white;
             border: none;
             padding: 10px 20px;
@@ -55,49 +56,72 @@
             transition: background-color 0.3s ease;
         }
         button:hover {
-            background-color: #8e2de2; /* 明るい紫 */
+            background-color: #8e2de2; 
         }
         #scoreBoard {
-            font-size: 1.1em; /* スコアボードの文字サイズを調整 */
-            margin-bottom: 8px; /* マージンを少し減らす */
-            color: #ffeb3b; /* 黄色いスコア */
-            text-align: center; /* 中央揃え */
-            width: 100%; /* 幅をコンテナに合わせる */
+            font-size: 1.1em; 
+            margin-bottom: 8px; 
+            color: #ffeb3b; 
+            text-align: center; 
+            width: 100%; 
         }
-        #messageOverlay {
+        .overlay { /* 共通オーバプレイスタイル */
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.8); /* 背景を少し濃く */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.85); 
             color: white;
             padding: 30px;
-            border-radius: 10px;
+            border-radius: 12px; /* game-container に合わせる */
             text-align: center;
-            font-size: 1.6em; /* メッセージの文字サイズを調整 */
-            z-index: 10; /* キャンバスより手前に表示 */
+            font-size: 1.6em; 
+            z-index: 10; 
+            box-sizing: border-box;
+        }
+        #startOverlay {
+             /* 最初は表示 */
+        }
+        #messageOverlay {
+             /* 最初は非表示 */
         }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
     <div class="game-container p-4 md:p-6 rounded-lg shadow-xl">
         <div id="scoreBoard" class="text-xl font-bold mb-2">スコア: 0</div>
-        <canvas id="gameCanvas"></canvas>
+        <canvas id="gameCanvas"></canvas> 
         <div class="controls-info mt-3 text-xs text-gray-400">
             <p>操作: マウス/タッチで自機を移動</p>
             <p>キーボード: ← → で移動 (マウスがキャンバス外)</p>
             <p>射撃: スペースキーでON/OFF (デフォルトON)</p>
         </div>
-    </div>
-    <div id="messageOverlay" class="hidden">
-        <p id="messageText"></p>
-        <button id="overlayRestartButton" class="mt-4 px-6 py-3 bg-green-500 hover:bg-green-600 rounded text-lg">もう一度遊ぶ</button>
+
+        <div id="startOverlay" class="overlay">
+            <h2 class="text-3xl mb-6">縦スクロールシューティング</h2>
+            <button id="startButton" class="px-8 py-4 bg-green-500 hover:bg-green-600 rounded text-xl">ゲーム開始</button>
+            <p class="mt-4 text-sm">クリックまたはタップして開始してください。</p>
+        </div>
+
+        <div id="messageOverlay" class="overlay hidden">
+            <p id="messageText"></p>
+            <button id="overlayRestartButton" class="mt-4 px-6 py-3 bg-green-500 hover:bg-green-600 rounded text-lg">もう一度遊ぶ</button>
+        </div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreBoard = document.getElementById('scoreBoard');
+        
+        const startOverlay = document.getElementById('startOverlay');
+        const startButton = document.getElementById('startButton');
+        
         const messageOverlay = document.getElementById('messageOverlay');
         const messageText = document.getElementById('messageText');
         const overlayRestartButton = document.getElementById('overlayRestartButton');
@@ -111,7 +135,7 @@
         // ゲームの状態
         let score = 0;
         let gameOver = false;
-        let gameRunning = true;
+        let gameRunning = false; // 最初は false
         let animationFrameId;
         let mouseOverCanvas = false;
         let playerShooting = true;
@@ -127,44 +151,69 @@
         let playerShootSound, enemyExplosionSound, powerUpSound, playerHitSound;
 
         async function initializeAudio() {
-            if (audioInitialized) return;
+            // console.log("initializeAudio called. Current audioInitialized state:", audioInitialized);
+            if (audioInitialized) {
+                // console.log("Audio already initialized, exiting initializeAudio.");
+                return;
+            }
+
+            if (typeof Tone === 'undefined' || Tone === null) {
+                console.error("Tone.js is not loaded!");
+                return;
+            }
+            
+            // if (Tone.context) {
+            //     console.log("Tone.context.state BEFORE Tone.start():", Tone.context.state);
+            // } else {
+            //     console.log("Tone.context is not yet available BEFORE Tone.start().");
+            // }
+
             try {
-                await Tone.start();
-                console.log("AudioContext started successfully by user gesture.");
-                audioInitialized = true;
+                // console.log("Attempting Tone.start()...");
+                await Tone.start(); 
+                // console.log("Tone.start() promise resolved. Tone.context.state AFTER Tone.start():", Tone.context.state);
 
-                // サウンドエフェクトの定義
-                playerShootSound = new Tone.MembraneSynth({
-                    pitchDecay: 0.005,
-                    octaves: 3,
-                    oscillator: { type: "sine" },
-                    envelope: { attack: 0.001, decay: 0.15, sustain: 0.01, release: 0.05 },
-                    volume: -18 // 控えめな音量
-                }).toDestination();
+                if (Tone.context.state === "running") {
+                    // console.log("AudioContext is running successfully.");
+                    audioInitialized = true;
 
-                enemyExplosionSound = new Tone.NoiseSynth({
-                    noise: { type: "white" },
-                    envelope: { attack: 0.005, decay: 0.1, sustain: 0 },
-                    volume: -10
-                }).toDestination();
+                    playerShootSound = new Tone.MembraneSynth({
+                        pitchDecay: 0.005,
+                        octaves: 3,
+                        oscillator: { type: "sine" },
+                        envelope: { attack: 0.001, decay: 0.15, sustain: 0.01, release: 0.05 },
+                        volume: -18 
+                    }).toDestination();
+                    // console.log("playerShootSound initialized:", !!playerShootSound);
 
-                powerUpSound = new Tone.Synth({
-                    oscillator: { type: "triangle" },
-                    envelope: { attack: 0.01, decay: 0.1, sustain: 0.05, release: 0.1 },
-                    volume: -8
-                }).toDestination();
+                    enemyExplosionSound = new Tone.NoiseSynth({
+                        noise: { type: "white" },
+                        envelope: { attack: 0.005, decay: 0.1, sustain: 0 },
+                        volume: -10
+                    }).toDestination();
+                    // console.log("enemyExplosionSound initialized:", !!enemyExplosionSound);
 
-                playerHitSound = new Tone.Synth({
-                    oscillator: { type: "sawtooth" },
-                    envelope: { attack: 0.01, decay: 0.25, sustain: 0 },
-                    volume: -8
-                }).toDestination();
+                    powerUpSound = new Tone.Synth({
+                        oscillator: { type: "triangle" },
+                        envelope: { attack: 0.01, decay: 0.1, sustain: 0.05, release: 0.1 },
+                        volume: -8
+                    }).toDestination();
+                    // console.log("powerUpSound initialized:", !!powerUpSound);
+
+                    playerHitSound = new Tone.Synth({
+                        oscillator: { type: "sawtooth" },
+                        envelope: { attack: 0.01, decay: 0.25, sustain: 0 },
+                        volume: -8
+                    }).toDestination();
+                    // console.log("playerHitSound initialized:", !!playerHitSound);
+                } else {
+                    // console.warn("Tone.start() completed, but AudioContext is not in 'running' state. Current state:", Tone.context.state);
+                }
 
             } catch (e) {
-                console.error("Failed to start AudioContext:", e);
+                console.error("Error during Tone.start() or synth initialization:", e);
             }
         }
-
 
         // 星の背景
         let stars = [];
@@ -216,6 +265,7 @@
         };
 
         function drawPlayer() {
+            if (!gameRunning) return; 
             if (player.invincible && Math.floor(player.invincibleTimer / 10) % 2 === 0) {
                 // 点滅
             } else {
@@ -246,6 +296,7 @@
         }
 
         function movePlayer() {
+            if (!gameRunning) return;
             if (!mouseOverCanvas) {
                 if (leftKeyPressed && player.x > 0) {
                     player.x -= player.dx;
@@ -265,7 +316,7 @@
         const shootInterval = 15;
 
         function shoot() {
-            if (!playerShooting || shootCooldown > 0 || gameOver) return;
+            if (!gameRunning || !playerShooting || shootCooldown > 0 || gameOver) return;
 
             const baseBullet = {
                 y: player.y,
@@ -287,11 +338,16 @@
             shootCooldown = shootInterval;
 
             if (audioInitialized && playerShootSound) {
-                playerShootSound.triggerAttackRelease("C6", "32n", Tone.now());
+                try {
+                    playerShootSound.triggerAttackRelease("C6", "32n", Tone.now());
+                } catch (e) {
+                    // console.error("Error playing playerShootSound:", e); // エラー時のみログ出力
+                }
             }
         }
 
         function updateBullets() {
+            if (!gameRunning) return;
             if (shootCooldown > 0) {
                 shootCooldown--;
             }
@@ -308,6 +364,7 @@
         }
 
         function drawBullets() {
+            if (!gameRunning) return;
             bullets.forEach(bullet => {
                 ctx.beginPath();
                 ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
@@ -331,6 +388,7 @@
         }
 
         function updatePowerUpItems() {
+            if (!gameRunning) return;
             for (let i = powerUpItems.length - 1; i >= 0; i--) {
                 const item = powerUpItems[i];
                 item.y += item.speed;
@@ -341,6 +399,7 @@
         }
 
         function drawPowerUpItems() {
+            if (!gameRunning) return;
             powerUpItems.forEach(item => {
                 ctx.beginPath();
                 ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
@@ -402,6 +461,7 @@
         }
 
         function updateEnemies() {
+            if (!gameRunning) return;
             enemySpawnTimer++;
             if (enemySpawnTimer >= enemySpawnInterval && !gameOver) {
                 spawnEnemy();
@@ -455,6 +515,7 @@
         }
         
         function drawEnemies() {
+            if (!gameRunning) return;
             enemies.forEach(enemy => {
                 ctx.fillStyle = enemy.color;
                 ctx.beginPath();
@@ -495,6 +556,7 @@
         }
 
         function updateEnemyBullets() {
+            if (!gameRunning) return;
             for (let i = enemyBullets.length - 1; i >= 0; i--) {
                 const bullet = enemyBullets[i];
                 bullet.y += bullet.speed;
@@ -505,6 +567,7 @@
         }
 
         function drawEnemyBullets() {
+            if (!gameRunning) return;
             enemyBullets.forEach(bullet => {
                 ctx.beginPath();
                 ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
@@ -515,6 +578,7 @@
 
         // 当たり判定
         function checkCollisions() {
+            if (!gameRunning) return;
             // プレイヤーの弾 vs 敵
             for (let i = bullets.length - 1; i >= 0; i--) {
                 if (!bullets[i]) continue;
@@ -534,7 +598,11 @@
                             score += (killedEnemy.type === 'dasher' ? 15 : (killedEnemy.type === 'shooter' ? 12 : 10));
                             createExplosion(killedEnemy.x + killedEnemy.width / 2, killedEnemy.y + killedEnemy.height / 2);
                             if (audioInitialized && enemyExplosionSound) {
-                                enemyExplosionSound.triggerAttackRelease("8n", Tone.now());
+                                try {
+                                    enemyExplosionSound.triggerAttackRelease("8n", Tone.now());
+                                } catch (e) {
+                                    // console.error("Error playing enemyExplosionSound:", e);
+                                }
                             }
                             if (killedEnemy.type === 'shooter' && Math.random() < powerUpDropChance) {
                                 spawnPowerUpItem(killedEnemy.x + killedEnemy.width / 2, killedEnemy.y + killedEnemy.height / 2);
@@ -555,9 +623,13 @@
                         player.powerLevel++;
                     }
                     if (audioInitialized && powerUpSound) {
-                        powerUpSound.triggerAttackRelease("C5", "16n", Tone.now());
-                        powerUpSound.triggerAttackRelease("E5", "16n", Tone.now() + 0.1);
-                        powerUpSound.triggerAttackRelease("G5", "16n", Tone.now() + 0.2);
+                        try {
+                            powerUpSound.triggerAttackRelease("C5", "16n", Tone.now());
+                            powerUpSound.triggerAttackRelease("E5", "16n", Tone.now() + 0.1);
+                            powerUpSound.triggerAttackRelease("G5", "16n", Tone.now() + 0.2);
+                        } catch (e) {
+                            // console.error("Error playing powerUpSound:", e);
+                        }
                     }
                 }
             }
@@ -609,7 +681,11 @@
             }
             
             if (audioInitialized && playerHitSound) {
-                playerHitSound.triggerAttackRelease("A2", "8n", Tone.now());
+                try {
+                    playerHitSound.triggerAttackRelease("A2", "8n", Tone.now());
+                } catch (e) {
+                    // console.error("Error playing playerHitSound:", e);
+                }
             }
 
             if (player.lives <= 0) {
@@ -640,6 +716,7 @@
         }
 
         function updateExplosions() {
+            if (!gameRunning) return;
             for (let i = explosions.length - 1; i >= 0; i--) {
                 const p = explosions[i];
                 p.x += Math.cos(p.angle) * p.speed;
@@ -654,6 +731,7 @@
         }
 
         function drawExplosions() {
+            if (!gameRunning) return;
             explosions.forEach(p => {
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
@@ -667,8 +745,9 @@
         // ゲームオーバー処理
         function triggerGameOver(message) {
             gameOver = true;
-            gameRunning = false;
-            cancelAnimationFrame(animationFrameId);
+            gameRunning = false; 
+            if(animationFrameId) cancelAnimationFrame(animationFrameId); 
+            
             let finalMessage = `${message}<br>最終スコア: ${score}`;
             messageText.innerHTML = finalMessage;
             messageOverlay.classList.remove('hidden');
@@ -677,6 +756,7 @@
 
         // ゲームリセット
         function resetGame() {
+            // console.log("resetGame called");
             score = 0;
             player.lives = 3;
             player.x = canvas.width / 2 - player.width / 2;
@@ -694,17 +774,25 @@
             shootCooldown = 0;
             playerShooting = true;
             gameOver = false;
-            gameRunning = true;
+            
             messageOverlay.classList.add('hidden');
             canvas.style.cursor = 'none';
-            initStars();
-            // audioInitialized = false; // オーディオは一度初期化されればOK
-            gameLoop();
+            
+            initStars(); 
+            updateScore(); 
+
+            if (!gameRunning) { 
+                gameRunning = true;
+                gameLoop();
+            }
         }
 
         // ゲームループ
         function gameLoop() {
-            if (!gameRunning) return;
+            if (!gameRunning) { 
+                 if(animationFrameId) cancelAnimationFrame(animationFrameId);
+                return;
+            }
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawStars();
@@ -724,22 +812,26 @@
             drawExplosions();
             updateScore();
 
-            if (!gameOver) {
-                animationFrameId = requestAnimationFrame(gameLoop);
-            }
+            animationFrameId = requestAnimationFrame(gameLoop);
         }
+        
+        startButton.addEventListener('click', async () => {
+            // console.log("Start button clicked.");
+            await initializeAudio(); 
+            startOverlay.classList.add('hidden');
+            resetGame(); 
+        });
 
-        // --- イベントリスナー ---
-        function handleUserInteraction() {
-            if (!audioInitialized) {
-                initializeAudio();
-            }
-        }
+        overlayRestartButton.addEventListener('click', async () => {
+            // console.log("Restart button clicked.");
+            await initializeAudio(); 
+            resetGame();
+        });
+
 
         canvas.addEventListener('mouseenter', () => {
             mouseOverCanvas = true;
-            if (!gameOver) canvas.style.cursor = 'none';
-            handleUserInteraction(); // マウスエンターでもオーディオ初期化試行
+            if (!gameOver && gameRunning) canvas.style.cursor = 'none';
         });
 
         canvas.addEventListener('mouseleave', () => {
@@ -748,8 +840,7 @@
         });
         
         canvas.addEventListener('mousemove', (e) => {
-            handleUserInteraction(); // マウス移動でもオーディオ初期化試行
-            if (mouseOverCanvas && !gameOver) {
+            if (mouseOverCanvas && !gameOver && gameRunning) {
                 const rect = canvas.getBoundingClientRect();
                 let newX = e.clientX - rect.left - player.width / 2;
                 player.x = Math.max(0, Math.min(newX, canvas.width - player.width));
@@ -758,10 +849,9 @@
 
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            handleUserInteraction(); // タッチ開始でオーディオ初期化
-            if (!gameOver) {
-                mouseOverCanvas = true;
-                 if (!gameOver) canvas.style.cursor = 'none';
+            if (!gameOver && gameRunning) {
+                mouseOverCanvas = true; 
+                if (!gameOver) canvas.style.cursor = 'none';
                 const rect = canvas.getBoundingClientRect();
                 if (e.touches.length > 0) {
                     let newX = e.touches[0].clientX - rect.left - player.width / 2;
@@ -771,17 +861,18 @@
         }, { passive: false });
         
         window.addEventListener('keydown', (e) => {
-            handleUserInteraction(); // キー入力でもオーディオ初期化試行
+            if (!gameRunning && !gameOver && e.key !== 'Enter') return; 
             if (gameOver && e.key !== 'Enter') return;
+
             if (e.key === 'ArrowLeft') {
                 leftKeyPressed = true;
             } else if (e.key === 'ArrowRight') {
                 rightKeyPressed = true;
             } else if (e.key === ' ') { 
                 e.preventDefault(); 
-                if (!gameOver) playerShooting = !playerShooting;
-            } else if (e.key === 'Enter' && gameOver) {
-                resetGame();
+                if (gameRunning && !gameOver) playerShooting = !playerShooting;
+            } else if (e.key === 'Enter' && gameOver) { 
+                 overlayRestartButton.click(); 
             }
         });
 
@@ -793,10 +884,6 @@
             }
         });
 
-        overlayRestartButton.addEventListener('click', () => {
-            handleUserInteraction(); // リスタートボタンクリックでもオーディオ初期化試行
-            resetGame();
-        });
 
         window.addEventListener('resize', () => {
             canvasWidth = Math.min(window.innerWidth * 0.9, 400);
@@ -809,16 +896,23 @@
 
             initStars(); 
             
-            if (!gameRunning && gameOver) {
+            if (!gameRunning) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 drawStars();
+                if (gameOver) { 
+                     drawPlayer(); 
+                }
             }
         });
 
-        // ゲーム開始
-        initStars();
-        updateScore();
-        gameLoop();
+        function initialDraw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            initStars();
+            drawStars();
+            updateScore(); 
+        }
+        initialDraw(); 
+
     </script>
 </body>
 </html>
